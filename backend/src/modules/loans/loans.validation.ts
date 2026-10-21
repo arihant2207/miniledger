@@ -57,4 +57,4 @@ export const loanIdParamSchema = z.object({
 });
 
 export type CreateLoanInput = z.infer<typeof createLoanSchema>;
-export type LoanIdParam = z.infer<typeof loanIdParamSchema>;
+
