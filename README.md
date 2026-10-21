@@ -51,15 +51,17 @@ npm run dev
 
 ## Running the Mobile App (Expo)
 
+> **Platform Target**: Native mobile only (iOS / Android via Expo Go, Emulator, or physical device). Web execution is intentionally unsupported as `expo-secure-store` requires hardware-backed OS keychains (Apple Keychain / Android KeyStore).
+
 ```bash
 cd app
 cp .env.example .env
 npm install
 npm start
 ```
-- Press `w` to open in browser (web).
 - Press `a` for Android Emulator.
 - Press `i` for iOS Simulator.
+- Scan QR code with Expo Go on a physical device.
 
 ---
 

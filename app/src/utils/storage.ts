@@ -6,22 +6,9 @@
  */
 
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 const TOKEN_KEY = 'miniledger_auth_token';
 const USER_KEY = 'miniledger_user_profile';
-
-// In-memory fallback for environments where SecureStore is unavailable (e.g. web testing)
-const memoryStore = new Map<string, string>();
-
-async function isSecureStoreAvailable(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
-  try {
-    return await SecureStore.isAvailableAsync();
-  } catch {
-    return false;
-  }
-}
 
 export interface StoredUser {
   id: string;
@@ -31,47 +18,26 @@ export interface StoredUser {
 
 export const storage = {
   async setToken(token: string): Promise<void> {
-    if (await isSecureStoreAvailable()) {
-      await SecureStore.setItemAsync(TOKEN_KEY, token, {
-        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      });
-    } else {
-      memoryStore.set(TOKEN_KEY, token);
-    }
+    await SecureStore.setItemAsync(TOKEN_KEY, token, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+    });
   },
 
   async getToken(): Promise<string | null> {
-    if (await isSecureStoreAvailable()) {
-      return SecureStore.getItemAsync(TOKEN_KEY);
-    }
-    return memoryStore.get(TOKEN_KEY) ?? null;
+    return SecureStore.getItemAsync(TOKEN_KEY);
   },
 
   async removeToken(): Promise<void> {
-    if (await isSecureStoreAvailable()) {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
-    } else {
-      memoryStore.delete(TOKEN_KEY);
-    }
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
   },
 
   async setUser(user: StoredUser): Promise<void> {
     const json = JSON.stringify(user);
-    if (await isSecureStoreAvailable()) {
-      await SecureStore.setItemAsync(USER_KEY, json);
-    } else {
-      memoryStore.set(USER_KEY, json);
-    }
+    await SecureStore.setItemAsync(USER_KEY, json);
   },
 
   async getUser(): Promise<StoredUser | null> {
-    let json: string | null = null;
-    if (await isSecureStoreAvailable()) {
-      json = await SecureStore.getItemAsync(USER_KEY);
-    } else {
-      json = memoryStore.get(USER_KEY) ?? null;
-    }
-
+    const json = await SecureStore.getItemAsync(USER_KEY);
     if (!json) return null;
     try {
       return JSON.parse(json) as StoredUser;
@@ -82,10 +48,6 @@ export const storage = {
 
   async clearAll(): Promise<void> {
     await this.removeToken();
-    if (await isSecureStoreAvailable()) {
-      await SecureStore.deleteItemAsync(USER_KEY);
-    } else {
-      memoryStore.delete(USER_KEY);
-    }
+    await SecureStore.deleteItemAsync(USER_KEY);
   },
 };
