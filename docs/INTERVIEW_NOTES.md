@@ -68,3 +68,74 @@ This document maintains architectural decisions, security rationales, and concis
   - *A: `Math.random()` uses a pseudo-random number generator (PRNG) that is predictable and cryptographically insecure. `crypto.randomInt` relies on operating system entropy (`/dev/urandom` or Windows CryptoAPI) to prevent token prediction.*
 - **Q: How does `ON CONFLICT (phone) DO UPDATE` in `findOrCreateUser` prevent race conditions?**
   - *A: In high-concurrency scenarios, two requests verifying an OTP simultaneously could both attempt to insert a user. A Postgres unique constraint on `phone` combined with `ON CONFLICT` atomic upsert guarantees exactly one user row exists without throwing unhandled duplicate key errors.*
+
+---
+
+## 4. Loans & Summary Modules (Phase 3)
+
+### Module Overview
+- **What it does**: Provides endpoints to create loans (`POST /loans`), list user-scoped loans sorted with overdue items first (`GET /loans`), mark loans as repaid idempotently (`PATCH /loans/:id/repay`), and compute portfolio totals (`GET /summary`) using a single SQL query.
+- **Why designed this way**: Minimizes round-trips and database locks. Offloads aggregation to Postgres via `SUM ... FILTER` across the composite index `(user_id, status, due_date)`, preventing floating-point inaccuracies and client-side arithmetic drift.
+
+### Core Architectural Invariants
+1. **Single-Query Summary Aggregation**:
+   ```sql
+   SELECT
+     COALESCE(SUM(amount), 0)::numeric(12,2) AS total_lent,
+     COALESCE(SUM(amount) FILTER (WHERE status = 'repaid'), 0)::numeric(12,2) AS total_repaid,
+     COALESCE(SUM(amount) FILTER (WHERE status = 'pending' AND due_date < CURRENT_DATE), 0)::numeric(12,2) AS total_overdue
+   FROM loans
+   WHERE user_id = $1;
+   ```
+   - Evaluated in a single pass over the table/index.
+   - Eliminates N+1 query patterns and multiple network round-trips.
+2. **Deterministic Overdue Sorting**:
+   - `ORDER BY CASE WHEN status = 'pending' AND due_date < CURRENT_DATE THEN 0 ELSE 1 END, due_date ASC, created_at DESC;`
+   - Surfaces urgent, overdue actionable rows at the top of the feed without requiring client-side re-sorting.
+3. **Ownership Isolation (404 instead of 403)**:
+   - When updating or reading a loan, queries include `WHERE id = $1 AND user_id = $2`.
+   - If zero rows match, the API returns `404 Not Found`. Returning `403 Forbidden` would leak the existence of other users' loans, opening the system to enumeration attacks.
+4. **Repayment Idempotency**:
+   - `UPDATE loans SET status = 'repaid', repaid_at = COALESCE(repaid_at, CURRENT_TIMESTAMP) WHERE id = $1 AND user_id = $2;`
+   - Repeated requests safely succeed without altering the historical repayment timestamp.
+
+### Likely Interview Questions & Answers
+- **Q: Why use `SUM ... FILTER (WHERE ...)` instead of separate queries or JS filtering?**
+  - *A: Executing multiple queries triples database connection overhead and network latency. Computing totals in JavaScript requires pulling all user rows into memory (scaling O(N) in memory and bandwidth). PostgreSQL evaluates `FILTER` directly on disk/cache using compiled C code, returning the exact 3 summary numbers in sub-millisecond time.*
+- **Q: Why return 404 instead of 403 when a user accesses someone else's loan?**
+  - *A: Returning 403 informs an attacker that a specific resource ID exists in the system (resource enumeration / oracle vulnerability). 404 treats foreign resources identically to non-existent resources, maintaining total privacy between users.*
+- **Q: How are monetary values handled across the network boundary?**
+  - *A: In PostgreSQL, `NUMERIC(12,2)` is used. The Node `pg` driver parses `NUMERIC` columns as strings (e.g. `"1500.50"`) to avoid JavaScript floating point errors. We format and expose both numeric numbers and fixed string representations (`amountFormatted: "1500.50"`) so clients render exact currency without rounding glitches.*
+
+---
+
+## 5. Automated Integration Testing (Phase 4)
+
+### Module Overview
+- **What it does**: Provides end-to-end integration tests using Jest and supertest against a real PostgreSQL instance, validating all domain rules, auth state transitions, and cross-user data isolation.
+- **Why designed this way**: Mocks can introduce false confidence by masking subtle SQL syntax differences, constraint triggers, or transaction isolation quirks. Testing against real PostgreSQL guarantees the exact queries, indexes, and constraints behave properly in production.
+
+### Test Coverage Highlights
+1. **Authentication Suite (`tests/auth.test.ts`)**:
+   - OTP request generation, phone validation, and rate limiting (429).
+   - Valid OTP verification & JWT payload issuance.
+   - Wrong OTP rejection & remaining attempts decrement.
+   - 5-attempt limit lockout.
+   - Time-based expiration rejection.
+   - Single-use replay protection.
+2. **Loans Suite (`tests/loans.test.ts`)**:
+   - Validation edge checks (amount > 0, max 2 decimals, future-or-today dates, non-empty friend name).
+   - Database-level sorting verification (overdue pending items placed first).
+   - Repayment idempotency (preserves original `repaid_at`).
+   - Cross-user data isolation (User B attempting to repay User A's loan receives 404; User B `GET /loans` cannot see User A's records).
+3. **Summary Suite (`tests/summary.test.ts`)**:
+   - Zero-loan baseline validation.
+   - Multi-loan portfolio calculations (total lent, total repaid, total overdue) in a single query.
+   - Multi-tenant isolation verification.
+
+### Likely Interview Questions & Answers
+- **Q: Why test against a real PostgreSQL database instead of an in-memory mock?**
+  - *A: PostgreSQL-specific SQL syntax like `FILTER (WHERE ...)`, `CURRENT_DATE`, `COALESCE`, `INTERVAL`, and transactional advisory locks are rarely supported accurately by in-memory SQLite or mock drivers. Testing against real Postgres ensures zero divergence between test and production environments.*
+- **Q: How is test isolation maintained across tests?**
+  - *A: A `resetDatabase()` helper executes `TRUNCATE TABLE loans, otps, users CASCADE;` before each test, ensuring zero state leakage across test cases while executing in a fraction of a millisecond.*
+
