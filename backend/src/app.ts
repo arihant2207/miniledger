@@ -10,6 +10,8 @@ import { env } from './config/env';
 import { logger } from './utils/logger';
 import { db } from './db';
 import { authRoutes } from './modules/auth/auth.routes';
+import { loansRoutes } from './modules/loans/loans.routes';
+import { summaryRoutes } from './modules/summary/summary.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { NotFoundError } from './utils/errors';
 
@@ -53,6 +55,8 @@ export function createApp(): Express {
 
   // Register domain module routes
   app.use('/auth', authRoutes);
+  app.use('/loans', loansRoutes);
+  app.use('/summary', summaryRoutes);
 
   // Catch unmatched routes and convert to 404 domain error
   app.use((req: Request, _res: Response, next: NextFunction) => {
