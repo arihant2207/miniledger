@@ -37,10 +37,29 @@ npm install
 npm run migrate
 ```
 
-### 4. Start the Backend Server
+### 4. Run Automated Test Suite
+```bash
+npm test
+```
+
+### 5. Start the Backend Server
 ```bash
 npm run dev
 ```
+
+---
+
+## Running the Mobile App (Expo)
+
+```bash
+cd app
+cp .env.example .env
+npm install
+npm start
+```
+- Press `w` to open in browser (web).
+- Press `a` for Android Emulator.
+- Press `i` for iOS Simulator.
 
 ---
 
