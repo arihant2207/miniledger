@@ -153,13 +153,13 @@ This document maintains architectural decisions, security rationales, and concis
    - `expo-secure-store` encrypts data using AES-256 with keys stored in the Android KeyStore or iOS Keychain (accessible only when device is unlocked).
 2. **Unified Network Error Pipeline**:
    - All network responses pass through `apiClient`. If the status is non-2xx or includes an `error` envelope, it converts it to a typed `ApiClientError(status, { code, message })`.
-   - On HTTP 401, a global listener triggers `logout()`, transitioning the UI seamlessly back to the Auth stack.
+   - On HTTP 401, a global listener triggers `logout()`, transitioning the UI back to the Auth stack.
 
 ### Likely Interview Questions & Answers
 - **Q: Why is `expo-secure-store` strictly preferred over `AsyncStorage` for JWT tokens?**
   - *A: `AsyncStorage` stores data in plain text without hardware encryption. On compromised or rooted devices, any third-party app or backup tool can read the JWT. `expo-secure-store` uses hardware security modules (Apple Secure Enclave and Android KeyStore) to encrypt secrets at rest.*
 - **Q: How does the app handle token expiration without throwing uncaught crashes in screens?**
-  - *A: `client.ts` registers a global unauthorized handler. When any request encounters an HTTP 401, the client notifies `AuthProvider`, which clears local secure storage and resets the state to unauthenticated, gracefully returning the user to the login screen.*
+  - *A: `client.ts` registers a global unauthorized handler. When any request encounters an HTTP 401, the client notifies `AuthProvider`, which clears local secure storage and resets the state to unauthenticated, returning the user to the login screen.*
 
 ---
 
