@@ -186,4 +186,27 @@ This document maintains architectural decisions, security rationales, and concis
 - **Q: How is accessibility (a11y) ensured in custom components?**
   - *A: All pressable buttons and inputs enforce minimum touch dimensions of 44x44px. Custom elements declare explicit `accessibilityRole` (e.g. `"button"`, `"listitem"`), `accessibilityLabel`, and `aria-invalid` states for screen readers.*
 
+---
+
+## 8. Demo Database Seeding & Production Safeguards (Phase 6 Polish)
+
+### Module Overview
+- **What it does**: Provides `npm run seed` (`backend/src/db/seed.ts`), an idempotent script creating demo user `+919999999999` and 6 realistic loan entries (2 overdue backdated 8 and 3 days, 1 due today, 2 future pending loans, and 1 repaid).
+- **Why designed this way**: Allows evaluators and reviewers to experience all UI states (overdue alerts, relative dates, repayment actions) within seconds of cloning. The script asserts `NODE_ENV !== 'production'` to prevent accidental data destruction in live deployments.
+
+### Likely Interview Questions & Answers
+- **Q: Why does the seed script explicitly check `NODE_ENV === 'production'`?**
+  - *A: Accidental execution of development seed scripts in production can wipe live customer ledgers or pollute analytics. Halting synchronously if `NODE_ENV === 'production'` prevents human error during deployment scripts or CI/CD pipelines.*
+- **Q: Why are overdue entries injected via seed data rather than the mobile app?**
+  - *A: Domain integrity requires that users cannot create retroactively backdated loans (`dueDate >= CURRENT_DATE`). However, testing and verifying the overdue alert UI requires existing overdue loans. The seed script bypasses the user entry form to set realistic past dates directly in SQL.*
+
+---
+
+## 9. Comprehensive Documentation & Quality Audit (Phase 8)
+
+### Module Overview
+- **What it does**: Establishes complete self-contained documentation ([README.md](file:///d:/miniledger/README.md)), explicit step-by-step fresh clone instructions, mobile LAN networking setup, complete API reference table, and a static quality audit across backend and mobile client.
+- **Why designed this way**: Production software must be effortlessly reproducible by any engineer. Providing concrete networking instructions for mobile Expo testing eliminates common LAN binding friction.
+
+
 
