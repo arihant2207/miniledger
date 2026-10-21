@@ -9,6 +9,7 @@ import { loansController } from './loans.controller';
 import { authenticate } from '../../middleware/auth';
 import { validateBody, validateParams } from '../../middleware/validate';
 import { createLoanSchema, loanIdParamSchema } from './loans.validation';
+import { asyncHandler } from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -18,18 +19,18 @@ router.use(authenticate);
 router.post(
   '/',
   validateBody(createLoanSchema),
-  loansController.createLoan as unknown as (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => void
+  asyncHandler(loansController.createLoan)
 );
 
 router.get(
   '/',
-  loansController.getLoans as unknown as (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => void
+  asyncHandler(loansController.getLoans)
 );
 
 router.patch(
   '/:id/repay',
   validateParams(loanIdParamSchema),
-  loansController.repayLoan as unknown as (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => void
+  asyncHandler(loansController.repayLoan)
 );
 
 export const loansRoutes = router;

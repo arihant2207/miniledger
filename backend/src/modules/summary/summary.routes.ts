@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { summaryController } from './summary.controller';
 import { authenticate } from '../../middleware/auth';
+import { asyncHandler } from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.use(authenticate);
 
 router.get(
   '/',
-  summaryController.getSummary as unknown as (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => void
+  asyncHandler(summaryController.getSummary)
 );
 
 export const summaryRoutes = router;
