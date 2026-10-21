@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -87,7 +88,9 @@ export function HomeScreen() {
       setSummary(updatedSummary);
     } catch (err) {
       if (err instanceof ApiClientError) {
-        alert(err.message);
+        Alert.alert('Repayment Failed', err.message);
+      } else {
+        Alert.alert('Repayment Failed', 'An unexpected error occurred while updating loan.');
       }
     } finally {
       setRepayingId(null);
