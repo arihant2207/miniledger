@@ -139,3 +139,51 @@ This document maintains architectural decisions, security rationales, and concis
 - **Q: How is test isolation maintained across tests?**
   - *A: A `resetDatabase()` helper executes `TRUNCATE TABLE loans, otps, users CASCADE;` before each test, ensuring zero state leakage across test cases while executing in a fraction of a millisecond.*
 
+---
+
+## 6. Client Architecture & Secure Token Persistence (Phase 5)
+
+### Module Overview
+- **What it does**: Establishes the Expo TypeScript client application (`app/`), centralized theme token system (`src/theme/`), hardware-backed token storage via `expo-secure-store`, and a typed API client (`src/api/client.ts`) with a single error handling pipeline and automatic Bearer injection.
+- **Why designed this way**: Prevents credential theft by using OS hardware keychains (iOS Keychain / Android KeyStore) rather than unencrypted AsyncStorage. Centralizing API requests eliminates boilerplate and guarantees that 401 Unauthorized responses automatically expire the local session.
+
+### Security & Architectural Invariants
+1. **expo-secure-store vs AsyncStorage**:
+   - `AsyncStorage` persists keys unencrypted in SQLite or plist files on disk, vulnerable to root access or backup extraction.
+   - `expo-secure-store` encrypts data using AES-256 with keys stored in the Android KeyStore or iOS Keychain (accessible only when device is unlocked).
+2. **Unified Network Error Pipeline**:
+   - All network responses pass through `apiClient`. If the status is non-2xx or includes an `error` envelope, it converts it to a typed `ApiClientError(status, { code, message })`.
+   - On HTTP 401, a global listener triggers `logout()`, transitioning the UI seamlessly back to the Auth stack.
+
+### Likely Interview Questions & Answers
+- **Q: Why is `expo-secure-store` strictly preferred over `AsyncStorage` for JWT tokens?**
+  - *A: `AsyncStorage` stores data in plain text without hardware encryption. On compromised or rooted devices, any third-party app or backup tool can read the JWT. `expo-secure-store` uses hardware security modules (Apple Secure Enclave and Android KeyStore) to encrypt secrets at rest.*
+- **Q: How does the app handle token expiration without throwing uncaught crashes in screens?**
+  - *A: `client.ts` registers a global unauthorized handler. When any request encounters an HTTP 401, the client notifies `AuthProvider`, which clears local secure storage and resets the state to unauthenticated, gracefully returning the user to the login screen.*
+
+---
+
+## 7. Screens & UI/UX Design System (Phase 6)
+
+### Module Overview
+- **What it does**: Implements the user-facing application:
+  - `LoginScreen`: progressive 2-stage login with inline phone validation, OTP verification, and a 30s resend cooldown timer.
+  - `HomeScreen`: real-time `SummaryCard` (Lent, Repaid, Overdue in INR), loan entries feed sorted overdue-first, status chips, idempotent mark-repaid action with confirmation dialog, pull-to-refresh, loading skeleton, and empty/error states.
+  - `AddLoanScreen`: form with inline validation, decimal numeric keypad, custom calendar date picker modal, and double-submit prevention.
+- **Why designed this way**: Follows a cohesive, restrained design system (4/8pt spacing, curated Indigo accent, high-contrast dark/light modes) meeting strict accessibility benchmarks (minimum 44px touch targets).
+
+### Core UI/UX Invariants
+1. **High-Visibility Overdue Highlighting**:
+   - Overdue pending entries are rendered with high-contrast alert borders and tinted backgrounds (`overdueBg` / `overdueBorder`), drawing immediate user attention.
+2. **Calendar Date Modal**:
+   - Prevents past-date selection on creation. Renders month navigation and outputs clean `YYYY-MM-DD` strings, eliminating timezone offsets and daylight saving quirks.
+3. **Double-Submit Prevention**:
+   - Form buttons disable immediately and display active activity spinners while requests are in-flight, preventing duplicate loan creations or simultaneous repayments.
+
+### Likely Interview Questions & Answers
+- **Q: How do you format currency without losing precision or dealing with floating-point bugs on mobile?**
+  - *A: The backend does calculations in SQL with `NUMERIC(12,2)`. The mobile app parses the exact string and applies Indian number grouping (last 3 digits, then every 2 digits) via a deterministic regex helper (`formatINR`), prepending `₹` without using lossy float arithmetic.*
+- **Q: How is accessibility (a11y) ensured in custom components?**
+  - *A: All pressable buttons and inputs enforce minimum touch dimensions of 44x44px. Custom elements declare explicit `accessibilityRole` (e.g. `"button"`, `"listitem"`), `accessibilityLabel`, and `aria-invalid` states for screen readers.*
+
+
