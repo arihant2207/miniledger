@@ -9,8 +9,6 @@
 import { storage } from '../utils/storage';
 import { ApiError } from './types';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-
 export class ApiClientError extends Error {
   public readonly code: string;
   public readonly details?: unknown;
@@ -23,6 +21,18 @@ export class ApiClientError extends Error {
     this.code = error.code;
     this.details = error.details;
   }
+}
+
+function getBaseUrl(): string {
+  const url = process.env.EXPO_PUBLIC_API_URL;
+  if (!url) {
+    throw new ApiClientError(0, {
+      code: 'CONFIG_ERROR',
+      message:
+        "EXPO_PUBLIC_API_URL is not set. Copy app/.env.example to app/.env and set it to your laptop's LAN IP.",
+    });
+  }
+  return url;
 }
 
 type UnauthorizedHandler = () => void;
@@ -41,6 +51,7 @@ export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const baseUrl = getBaseUrl();
   const token = await storage.getToken();
 
   const headers: Record<string, string> = {
@@ -53,7 +64,7 @@ export async function apiClient<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = `${BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+  const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
 
   let response: Response;
   try {
