@@ -44,7 +44,7 @@ export function SummaryCard({ summary }: SummaryCardProps) {
         Portfolio Overview
       </Text>
 
-      <View style={[styles.figuresRow, { marginTop: spacing.md }]}>
+      <View style={[styles.figuresRow, { marginTop: spacing.md, gap: spacing.sm }]}>
         {/* Total Lent */}
         <View style={styles.metricColumn}>
           <Text style={[typography.caption, { color: colors.textMuted }]}>
@@ -57,6 +57,7 @@ export function SummaryCard({ summary }: SummaryCardProps) {
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
+            minimumFontScale={0.65}
           >
             {formatINR(totalLent)}
           </Text>
@@ -74,6 +75,7 @@ export function SummaryCard({ summary }: SummaryCardProps) {
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
+            minimumFontScale={0.65}
           >
             {formatINR(totalRepaid)}
           </Text>
@@ -94,6 +96,7 @@ export function SummaryCard({ summary }: SummaryCardProps) {
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
+            minimumFontScale={0.65}
           >
             {formatINR(totalOverdue)}
           </Text>
@@ -114,10 +117,10 @@ const styles = StyleSheet.create({
   },
   figuresRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
   metricColumn: {
     flex: 1,
+    minWidth: 0,
   },
 });
