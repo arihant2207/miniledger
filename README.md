@@ -314,6 +314,25 @@ npm run typecheck
 
 ---
 
+## Troubleshooting
+
+### "Unable to connect to MiniLedger server"
+If the mobile app displays a network connection error when requesting an OTP or loading data:
+- **Incorrect URL**: Ensure `app/.env` points to your laptop's LAN IPv4 address (e.g. `http://192.168.1.45:3000`). Do not use `localhost` because on a physical phone `localhost` refers to the mobile phone itself. For the Android emulator, use `http://10.0.2.2:3000`.
+- **Firewall blocking port 3000**: Ensure incoming connections on port 3000 are allowed in your host computer's firewall settings.
+- **Different Wi-Fi networks**: Ensure both your phone and laptop are on the same Wi-Fi network and that router AP/client isolation is not enabled.
+- **Stale environment cache**: Expo inlines `EXPO_PUBLIC_*` variables at bundle time. If you created or edited `app/.env` while Expo was running, restart the Expo dev server with the cache cleared:
+  ```bash
+  npx expo start -c
+  ```
+
+### Expo Go SDK Mismatch
+The mobile app targets **Expo SDK 57**. If Expo Go displays an SDK version mismatch or cannot open the project:
+- Expo Go must support the project's SDK (SDK 57).
+- Verify the installed Expo Go version, or download and install the matching APK/build directly from [expo.dev/go](https://expo.dev/go).
+
+---
+
 ## Known Limitations
 
 1. **Mock OTP Delivery**:
