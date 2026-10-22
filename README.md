@@ -346,6 +346,6 @@ The mobile app targets **Expo SDK 57**. If Expo Go displays an SDK version misma
 
 ---
 
-## Architecture Defense & Interview Guide
+## Technical Architecture Guide
 
-For explanations of trade-offs, database indexing strategies, threat modeling, and anticipated interview questions for each module, see the [Architecture Defense Guide](file:///d:/miniledger/docs/INTERVIEW_NOTES.md).
+For explanations of trade-offs, database indexing strategies, threat modeling, and design rationales for each module, see the [Technical Architecture Guide](file:///d:/miniledger/docs/ARCHITECTURE.md).
