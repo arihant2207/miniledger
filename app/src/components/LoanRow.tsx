@@ -94,7 +94,6 @@ export function LoanRow({ loan, onRepay, isRepaying = false }: LoanRowProps) {
           marginBottom: spacing.sm,
         },
       ]}
-      accessibilityRole="listitem"
       accessibilityLabel={`Loan to ${loan.friendName}, amount ${formatINR(loan.amount)}, status ${chip.label}, ${relativeDate.text}`}
     >
       <View style={styles.topRow}>

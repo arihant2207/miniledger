@@ -38,7 +38,7 @@ export function LoginScreen() {
 
   // Resend cooldown timer
   const [cooldown, setCooldown] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (cooldown > 0) {
