@@ -19,7 +19,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../theme/ThemeContext';
@@ -36,8 +36,12 @@ import { MainStackParamList } from '../navigation/types';
 
 export function HomeScreen() {
   const { colors, spacing, typography, isDark, setThemeMode, themeMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+
+  // Clearance for floating "+ Lend Money" button (button height: 52 + margin: spacing.xl + safe-area inset + gap)
+  const listBottomPadding = 52 + spacing.xl + insets.bottom + spacing.lg;
 
   const [loans, setLoans] = useState<Loan[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -187,7 +191,7 @@ export function HomeScreen() {
           }
           contentContainerStyle={[
             styles.listContent,
-            { padding: spacing.lg, paddingBottom: 100 },
+            { padding: spacing.lg, paddingBottom: listBottomPadding },
           ]}
           ListHeaderComponent={
             <View style={{ marginBottom: spacing.lg }}>
