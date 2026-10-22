@@ -17,10 +17,10 @@ The application is built with raw parameterized SQL, strict TypeScript, a layere
 - **Testing**: Jest 30.5.2 & Supertest 7.3.1 integration test suite executed against PostgreSQL
 
 ### Mobile Client (`app/`)
-- **Platform**: React Native 0.88.0, React 19.3.0, Expo SDK 58 (expo 58.0.16)
+- **Platform**: React Native 0.86.3, React 19.2.3, Expo SDK 57 (`expo` ~57.0.0)
 - **Target OS**: Native mobile (iOS and Android via Expo Go, Emulator, Simulator, or standalone builds)
 - **Navigation**: React Navigation 7 (`@react-navigation/native` 7.0.14, `@react-navigation/native-stack` 7.2.0)
-- **Secure Persistence**: `expo-secure-store` 58.0.2 backed by OS keychains (Apple Keychain / Android KeyStore)
+- **Secure Persistence**: `expo-secure-store` ~57.0.4 backed by OS keychains (Apple Keychain / Android KeyStore)
 - **Design Tokens**: Light and dark theme tokens, 4/8pt spacing scale, 44px minimum touch targets
 
 ### Infrastructure & DevOps
@@ -117,7 +117,7 @@ npm start
 ### Prerequisites
 - Node.js (20.x or 22.x LTS)
 - Docker and Docker Compose (or a local PostgreSQL 16 instance)
-- Expo Go app on a mobile device, or Android Studio / Xcode for emulators
+- Expo Go app on a mobile device (must support Expo SDK 57, installable from the Play Store or from [expo.dev/go](https://expo.dev/go) for the right SDK), or Android Studio / Xcode for emulators
 
 ### 1. Clone the Repository
 ```bash
@@ -188,6 +188,9 @@ When testing on a physical mobile device via Expo Go, `localhost` refers to the 
    ```
 
 ### 2. Platform Options
+
+> **Expo Go Version Compatibility**: The mobile client targets **Expo SDK 57**. Ensure your device's Expo Go app supports SDK 57 (installable from the Google Play Store / Apple App Store, or downloaded directly from [expo.dev/go](https://expo.dev/go) for the matching SDK version).
+
 - **Physical Device**: Scan the QR code displayed in the terminal using the Expo Go app (Android) or Camera app (iOS). The phone must be on the same local network as the laptop.
 - **Android Emulator**: Press `a` in the Expo CLI terminal.
 - **iOS Simulator**: Press `i` in the Expo CLI terminal (macOS only).
